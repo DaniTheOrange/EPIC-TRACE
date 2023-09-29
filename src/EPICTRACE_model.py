@@ -12,7 +12,7 @@ import pickle
 import torchmetrics
 import os
 import copy
-from construct_long import correct_tolong
+from src.construct_long import correct_tolong
 
 second_level = ['HLA-B*44', 'HLA-A*03', 'HLA-B*37', 'HLA-B*35', 'HLA-A*11', 'HLA-B*40', 'HLA-A*30', 'HLA-B*52', 'HLA-B*51', 'HLA-C*14', 'HLA-B*81', 'HLA-B*57', 'HLA-B*58', 'HLA-C*03', 'HLA-C*07', 'HLA-B*07', 'HLA-C*08', 'HLA-C*04', 'HLA-A*32', 'HLA-A*02', 'HLA-B*18',
  'HLA-A*2', 'HLA-A*25', 'HLA-A*24', 'HLA-B*14', 'HLA-B*42', 'HLA-B*12', 'HLA-B*7', 'HLA-B*08', 'HLA-B*15', 'HLA-E*01', 'HLA-B*38', 'HLA-B*53', 'HLA-A*1', 'HLA-C*05', 'HLA-C*06', 'HLA-B*8', 'HLA-A*68', 'HLA-C*w3', 'HLA-A*01', 'HLA-B*27','HLA-A*29']
