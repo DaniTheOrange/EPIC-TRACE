@@ -3,7 +3,7 @@ import csv
 import re
 import pandas as pd
 import os
-from src.split import set_diff
+from split import set_diff
 # copied from corresponding jupyter notebook
 def add_gap(tcr,l_max,gap_char='-'):
     """Add gap to given TCR. Returned tcr will have length l_max.
@@ -471,21 +471,34 @@ def fix_IEDB_data(trust_cur_nona_HS_pos2,trust_cur_nona_HS_neg, return_broken=Fa
         return only_pos,broken1
     return only_pos
 
-def process_IEDB(in_csv_pos,in_csv_neg,return_broken=False):
+def process_IEDB(in_csv_pos,in_csv_neg,return_broken=False,old_IEDB_export=False,file_cur=None, file_calc=None):
     iedb_HS_neg = pd.read_csv(in_csv_neg)
     iedb_HS_pos2 = pd.read_csv(in_csv_pos)
     old_file=['MHC Allele Names','Description','Curated Chain 2 V Gene','Curated Chain 2 J Gene','Chain 2 CDR3 Curated','Curated Chain 1 V Gene','Curated Chain 1 J Gene','Chain 1 CDR3 Curated']
     old_file_calc = ['Calculated Chain 2 V Gene','Calculated Chain 2 J Gene', 'Chain 2 CDR3 Calculated','Calculated Chain 1 V Gene','Calculated Chain 1 J Gene', 'Chain 1 CDR3 Calculated']
+    new_file=['Assay - MHC Allele Names', 'Epitope - Name','Chain 2 - Curated V Gene', 'Chain 2 - Curated J Gene','Chain 2 - CDR3 Curated' ,'Chain 1 - Curated V Gene','Chain 1 - Curated J Gene','Chain 1 - CDR3 Curated']
+    new_file_calc = ['Chain 2 - Calculated V Gene', 'Chain 2 - Calculated J Gene','Chain 2 - CDR3 Calculated' ,'Chain 1 - Calculated V Gene','Chain 1 - Calculated J Gene', 'Chain 1 - CDR3 Calculated']
     
-    iedb_cur = iedb_HS_pos2[old_file].replace(['nan'], None)
+    if (file_cur is not None) and (file_calc is not None):
+        file_cur = file_cur
+        file_calc = file_calc
+    elif old_IEDB_export:
+        file_cur = old_file
+        file_calc = old_file_calc
+    else:
+        file_cur = new_file
+        file_calc = new_file_calc
+
+    
+    iedb_cur = iedb_HS_pos2[file_cur].replace(['nan'], None)
     iedb_cur.columns= ['MHC A','Epitope','V','J','CDR3','aV','aJ','alpha']
-    iedb_cal = iedb_HS_pos2[old_file_calc].replace(['nan'], None)
+    iedb_cal = iedb_HS_pos2[file_calc].replace(['nan'], None)
     iedb_cal.columns= ['V','J','CDR3','aV','aJ','alpha']
     trust_cur_HS_pos2 = iedb_cur.combine_first(iedb_cal)
 
-    iedb_cur = iedb_HS_neg[old_file].replace(['nan'], None)
+    iedb_cur = iedb_HS_neg[file_cur].replace(['nan'], None)
     iedb_cur.columns= ['MHC A','Epitope','V','J','CDR3','aV','aJ','alpha']
-    iedb_cal = iedb_HS_neg[old_file_calc].replace(['nan'], None)
+    iedb_cal = iedb_HS_neg[file_calc].replace(['nan'], None)
     iedb_cal.columns= ['V','J','CDR3','aV','aJ','alpha']
     trust_cur_HS_neg = iedb_cur.combine_first(iedb_cal)
 

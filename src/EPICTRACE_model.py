@@ -12,7 +12,7 @@ import pickle
 import torchmetrics
 import os
 import copy
-from src.construct_long import correct_tolong
+from construct_long import correct_tolong
 
 second_level = ['HLA-B*44', 'HLA-A*03', 'HLA-B*37', 'HLA-B*35', 'HLA-A*11', 'HLA-B*40', 'HLA-A*30', 'HLA-B*52', 'HLA-B*51', 'HLA-C*14', 'HLA-B*81', 'HLA-B*57', 'HLA-B*58', 'HLA-C*03', 'HLA-C*07', 'HLA-B*07', 'HLA-C*08', 'HLA-C*04', 'HLA-A*32', 'HLA-A*02', 'HLA-B*18',
  'HLA-A*2', 'HLA-A*25', 'HLA-A*24', 'HLA-B*14', 'HLA-B*42', 'HLA-B*12', 'HLA-B*7', 'HLA-B*08', 'HLA-B*15', 'HLA-E*01', 'HLA-B*38', 'HLA-B*53', 'HLA-A*1', 'HLA-C*05', 'HLA-C*06', 'HLA-B*8', 'HLA-A*68', 'HLA-C*w3', 'HLA-A*01', 'HLA-B*27','HLA-A*29']
@@ -30,7 +30,7 @@ def add_asterisk(hla1):
 
 class PPIDataset2(Dataset):
     
-    def __init__(self,csv_file=None,df=None,embedding_dict=None,output_mhc_A=False,output_vj=False,mhc_hi=False,add_01=False,only_CDR3=False,load_MHC_dicts=False):
+    def __init__(self,csv_file=None,df=None,embedding_dict=None,output_mhc_A=False,output_vj=False,mhc_hi=False,add_01=False,only_CDR3=False,load_MHC_dicts=False,mhc_dict_path="data/MHC_all_dict.bin"):
         assert(csv_file is not None or df is not None)
         
         if csv_file:
@@ -63,8 +63,9 @@ class PPIDataset2(Dataset):
         self.output_vj = output_vj
         self.only_CDR3 = only_CDR3
         self.aa_dict=dict(zip(list("GPAVLIMCFYWHKRQNEDST"),list(range(1,21))))
+        
         if load_MHC_dicts:
-            with open("data/MHC_all_dict.bin","rb") as handle:
+            with open(mhc_dict_path,"rb") as handle:
                 self.mhc_dict = pickle.load(handle)
         else:
             self.mhc_dict =dict(zip([None,'HLA class I', 'HLA class II', 'HLA-A*01', 'HLA-A*01:01', 'HLA-A*02', 'HLA-A*02:01', 'HLA-A*02:01:110', 'HLA-A*02:01:48', 'HLA-A*02:01:59', 'HLA-A*02:01:98',
@@ -660,12 +661,14 @@ class LitEPICTRACE(pl.LightningModule):
     def __init__(self,hparams,model_class=EPICTRACE):
         super().__init__()
         self.load_MHC_dicts = hparams.get("load_MHC_dicts",False)
+        self.mhc_dict_path = hparams.get("MHC_dict","data/MHC_all_dict.bin")
         if self.load_MHC_dicts:
             with open("data/MHC_lvl2nd_dict.bin","rb") as handle:
                 hparams["MHC_lvl2_dim"] = len(pickle.load(handle))
             with open("data/MHC_lvl3rd_dict.bin","rb") as handle:
                 hparams["MHC_lvl3_dim"] = len(pickle.load(handle))
-            with open("data/MHC_all_dict.bin","rb") as handle:
+            
+            with open(self.mhc_dict_path,"rb") as handle:
                 hparams["MHC_all_dim"] = len(pickle.load(handle))
         else:
             hparams["MHC_lvl2_dim"] = 43
@@ -686,14 +689,16 @@ class LitEPICTRACE(pl.LightningModule):
         assert self.test_task in [-1,0,1,2,3]
         self.add_01 = hparams["add_01"] if "add_01" in hparams else False
         self.only_CDR3 = hparams["only_CDR3"] if "only_CDR3" in hparams else False
+        self.train_datapath = hparams["train"] if (hparams["train"] is not None) else os.getcwd() + '/data/'+self.dataset+'_train_data' 
+        self.val_datapath = hparams["val"] if (hparams["val"] is not None) else os.getcwd() + '/data/'+self.dataset+'_validate_data'
+        self.test_datapath = hparams["test"] if (hparams["test"] is not None) else (os.getcwd() + '/data/'+self.dataset+'_tpp'+ str(self.test_task) +'_data' if (self.test_task > -1) else os.getcwd() + '/data/'+self.dataset+'_test_data')
         
-
         if self.input_embedding:
-            print("debugging not actually loading embedding")
+            # print("debugging not actually loading embedding")
             self.input_embedding_data = hparams['input_embedding_data']
             self.ed = None
-            # with open(os.getcwd() +'/data/' +self.input_embedding_data , 'rb') as handle:
-            #     self.ed = pickle.load(handle)
+            with open(os.getcwd() +'/data/' +self.input_embedding_data , 'rb') as handle:
+                self.ed = pickle.load(handle)
         else:
             self.ed = None
 
@@ -738,10 +743,10 @@ class LitEPICTRACE(pl.LightningModule):
 
     def validation_step(self,batch,batch_idx,dataloader_idx=None):
         
-        # pred ,label,weight = self.step(batch)
-        pred = torch.tensor([0.0,0.0]).view(-1)
-        label = torch.tensor([0,1],dtype=torch.int32).view(-1)
-        weight = torch.tensor([0.0,0.0]).view(-1)
+        pred ,label,weight = self.step(batch)
+        # pred = torch.tensor([0.0,0.0]).view(-1)
+        # label = torch.tensor([0,1],dtype=torch.int32).view(-1)
+        # weight = torch.tensor([0.0,0.0]).view(-1)
         
         loss = F.binary_cross_entropy(pred.view(-1),label.to(torch.float),weight=self.weight_fun(label,weight))
         self.log('valid_loss', loss)
@@ -793,10 +798,10 @@ class LitEPICTRACE(pl.LightningModule):
             preds = torch.cat([ x['pred'] for x in out])
             labels = torch.cat([ x['label'] for x in out])
             
-            # roc_auc = torchmetrics.functional.auroc(preds,labels)
-            # ap = torchmetrics.functional.average_precision(preds,labels)
-            roc_auc = torch.tensor(0.0)
-            ap = torch.tensor(0.0)
+            roc_auc = torchmetrics.functional.auroc(preds,labels)
+            ap = torchmetrics.functional.average_precision(preds,labels)
+            # roc_auc = torch.tensor(0.0)
+            # ap = torch.tensor(0.0)
         
             # print('ROC_AUC_' + se[idx],roc_auc)
             # print('ap_'+ se[idx],ap)
@@ -860,9 +865,9 @@ class LitEPICTRACE(pl.LightningModule):
 
     def train_dataloader(self):
         
-
-        tcr_train_data = PPIDataset2(csv_file = os.getcwd() + '/data/'+self.dataset+'_train_data',embedding_dict=self.ed,
-            output_vj=self.EPICTRACE_model.output_vj,output_mhc_A=self.EPICTRACE_model.output_mhc, mhc_hi=self.EPICTRACE_model.mhc_hi,add_01=self.add_01,only_CDR3=self.only_CDR3,load_MHC_dicts = self.load_MHC_dicts )
+        
+        tcr_train_data = PPIDataset2(csv_file = self.train_datapath,embedding_dict=self.ed,
+            output_vj=self.EPICTRACE_model.output_vj,output_mhc_A=self.EPICTRACE_model.output_mhc, mhc_hi=self.EPICTRACE_model.mhc_hi,add_01=self.add_01,only_CDR3=self.only_CDR3,load_MHC_dicts = self.load_MHC_dicts, mhc_dict_path=self.mhc_dict_path )
         
         tcr_train_data.TCR_max_length = self.EPICTRACE_model.TCR_max_length
         tcr_train_data.epitope_max_length = self.EPICTRACE_model.epitope_max_length
@@ -875,43 +880,32 @@ class LitEPICTRACE(pl.LightningModule):
 
     def val_dataloader(self):
         
-        ret = []
-        dataloader_list = ['validate','validate2','validate3','validate_mix']
-        # if self.test_task != -1:
-        #     dataloader_list = ["validate"]
-        for name in dataloader_list:
-            dnam = os.getcwd() + '/data/'+self.dataset+'_'+name +'_data'
-            if os.path.exists(dnam) or os.path.exists(dnam+".gz"):
-                tcr_test_data = PPIDataset2(csv_file = dnam,embedding_dict=self.ed,
-                    output_vj=self.EPICTRACE_model.output_vj,output_mhc_A=self.EPICTRACE_model.output_mhc, mhc_hi=self.EPICTRACE_model.mhc_hi,add_01=self.add_01,only_CDR3=self.only_CDR3,load_MHC_dicts = self.load_MHC_dicts)
-                tcr_test_data.TCR_max_length = self.EPICTRACE_model.TCR_max_length
-                tcr_test_data.epitope_max_length = self.EPICTRACE_model.epitope_max_length
+        
+        
+        tcr_test_data = PPIDataset2(csv_file = self.val_datapath,embedding_dict=self.ed,
+            output_vj=self.EPICTRACE_model.output_vj,output_mhc_A=self.EPICTRACE_model.output_mhc, mhc_hi=self.EPICTRACE_model.mhc_hi,add_01=self.add_01,only_CDR3=self.only_CDR3,load_MHC_dicts = self.load_MHC_dicts, mhc_dict_path=self.mhc_dict_path)
+        tcr_test_data.TCR_max_length = self.EPICTRACE_model.TCR_max_length
+        tcr_test_data.epitope_max_length = self.EPICTRACE_model.epitope_max_length
 
-                
-                test_dataloader = DataLoader(tcr_test_data, batch_size=self.batch_size,
-                                        collate_fn=tcr_test_data.give_collate(self.collate) ,num_workers=self.num_cpus ,pin_memory=True)
-                ret.append(test_dataloader)
+        
+        test_dataloader = DataLoader(tcr_test_data, batch_size=self.batch_size,
+                                collate_fn=tcr_test_data.give_collate(self.collate) ,num_workers=self.num_cpus ,pin_memory=True)
             
         
-        return ret
+        return test_dataloader
 
     def test_dataloader(self):
-        # TPP1 is named test 
-        ret = []
-        dataloader_list = ['test', 'tpp2','tpp3','test_mix']
-        if self.test_task != -1:
-            dataloader_list = [dataloader_list[self.test_task]]
-        for name in dataloader_list:
+        
 
-            tcr_test_data = PPIDataset2(csv_file = os.getcwd() + '/data/'+self.dataset+'_'+name +'_data',embedding_dict=self.ed,
-                output_vj=self.EPICTRACE_model.output_vj,output_mhc_A=self.EPICTRACE_model.output_mhc, mhc_hi=self.EPICTRACE_model.mhc_hi,add_01=self.add_01,only_CDR3=self.only_CDR3,load_MHC_dicts = self.load_MHC_dicts)
-            tcr_test_data.TCR_max_length = self.EPICTRACE_model.TCR_max_length
-            tcr_test_data.epitope_max_length = self.EPICTRACE_model.epitope_max_length
+        tcr_test_data = PPIDataset2(csv_file = self.test_datapath,embedding_dict=self.ed,
+            output_vj=self.EPICTRACE_model.output_vj,output_mhc_A=self.EPICTRACE_model.output_mhc, mhc_hi=self.EPICTRACE_model.mhc_hi,add_01=self.add_01,only_CDR3=self.only_CDR3,load_MHC_dicts = self.load_MHC_dicts, mhc_dict_path=self.mhc_dict_path)
+        tcr_test_data.TCR_max_length = self.EPICTRACE_model.TCR_max_length
+        tcr_test_data.epitope_max_length = self.EPICTRACE_model.epitope_max_length
 
+        
+        test_dataloader = DataLoader(tcr_test_data, batch_size=self.batch_size,
+                                collate_fn=tcr_test_data.give_collate(self.collate)  ,num_workers=self.num_cpus ,pin_memory=True)
             
-            test_dataloader = DataLoader(tcr_test_data, batch_size=self.batch_size,
-                                    collate_fn=tcr_test_data.give_collate(self.collate)  ,num_workers=self.num_cpus ,pin_memory=True)
-            ret.append(test_dataloader)
             
         
-        return ret
+        return test_dataloader

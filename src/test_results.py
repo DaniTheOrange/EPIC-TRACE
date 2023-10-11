@@ -1,5 +1,4 @@
-from ast import parse
-from sklearn import datasets
+
 import torch
 from EPICTRACE_model import LitEPICTRACE, EPICTRACE
 import argparse
@@ -8,7 +7,7 @@ import pytorch_lightning as pl
 import numpy as np
 import pandas as pd
 import torchmetrics
-import shutil
+
 from split import cap_to_size,read_and_filter
 from copy import deepcopy
 import pickle
@@ -274,20 +273,20 @@ if __name__ =='__main__':
             gepis = None
         collect_epitopes(params.collect_path,gepis,params.out_name,params.save_version,params.dataset)
     else:
-            print("pl version ",pl.__version__)
-            print(torch.cuda.device_count())
-            trainer = pl.Trainer(gpus =torch.cuda.device_count(),reload_dataloaders_every_epoch=True)
+        print("pl version ",pl.__version__)
+        print(torch.cuda.device_count())
+        trainer = pl.Trainer(gpus =torch.cuda.device_count(),reload_dataloaders_every_epoch=True)
 
-            for version_idx,version in enumerate(params.version):
+        for version_idx,version in enumerate(params.version):
 
-                for idx,run in enumerate(params.runs): 
+            for idx,run in enumerate(params.runs): 
 
-                    path = get_path(params,run,version_idx)
-                    print(path)
-                    model = LitEPICTRACE.load_from_checkpoint(path,"cpu")
-                    
-                    model.eval()
-                    model.freeze()
-                    if params.save_preds:
-                        save_preds(model,path,params.dataset,params.data_embedding_dict,params.pred_save_path)
+                path = get_path(params,run,version_idx)
+                print(path)
+                model = LitEPICTRACE.load_from_checkpoint(path,"cpu")
+                
+                model.eval()
+                model.freeze()
+                if params.save_preds:
+                    save_preds(model,path,params.dataset,params.data_embedding_dict,params.pred_save_path)
                         

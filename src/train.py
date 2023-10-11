@@ -14,11 +14,11 @@ parser = argparse.ArgumentParser()
 parser.add_argument("model",type=str,help="Dummy argument to be compatible with saved models")
 parser.add_argument("-d","--dataset", type=str, default='IEVDJcor310fPEpivalR_17_60tpp3_CV/ab_b0',help="Name of dataset to train and validate the model with. Located in the 'data/' folder. Train and validation files ends with '_train_data' and '_validate_data' + extension= '.gz' / '.csv'")
 
-# parser.add_argument("--train",type=str,help="path to train data") # TODO
-# parser.add_argument("--val",type=str,help="path to val data") # TODO
-# parser.add_argument("--test",type=str,help="path to test data") # TODO
+parser.add_argument("--train",type=str,help="path to train data")
+parser.add_argument("--val",type=str,help="path to val data")
+parser.add_argument("--test",type=str,help="path to test data") 
 # parser.add_argument("--TPP",type=int,default=3,help="The TPP level to train for. 2 for TPP2 and 3 for TPP3. Sets all arguments to corresponding default arguments") # TODO
-# parser.add_argument("--MHC_dict",type=str,help="path to MHC dictionary") # TODO
+parser.add_argument("--MHC_dict",type=str,help="path to MHC dictionary") 
 
 parser.add_argument("--lr",type=float,default=0.001,help="Learning rate to be used.")
 parser.add_argument("--batch_size",type=int,default=128)
