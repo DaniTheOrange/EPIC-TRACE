@@ -18,7 +18,7 @@ parser.add_argument("--train",type=str,help="path to train data")
 parser.add_argument("--val",type=str,help="path to val data")
 parser.add_argument("--test",type=str,help="path to test data") 
 # parser.add_argument("--TPP",type=int,default=3,help="The TPP level to train for. 2 for TPP2 and 3 for TPP3. Sets all arguments to corresponding default arguments") # TODO
-parser.add_argument("--MHC_dict",type=str,help="path to MHC dictionary") 
+parser.add_argument("--MHC_dict",type=str,help="path to MHC dictionary if not default dictionaries are used") 
 
 parser.add_argument("--lr",type=float,default=0.001,help="Learning rate to be used.")
 parser.add_argument("--batch_size",type=int,default=128)
@@ -61,8 +61,11 @@ parser.add_argument("--collate",type=str,default="embedding_one_hot", help="The 
 parser.add_argument("--weight_fun",type=str,help="The weighting function to use for the loss Defaults to 'Label*(4.0) + 1', If --weight_fun == 'Linear' the weight specified in the Weight column of the train data file is used.")
 
 
-parser.add_argument("--output_mhc",action="store_true", help="Use MHC information for prediction.") # to ignore_MHC
-parser.add_argument("--output_vj",action="store_true",help="Use VJ information for prediction.") # to ignore_VJ
+# parser.add_argument("--output_mhc",action="store_true", help="Use MHC information for prediction.") # to ignore_MHC
+# parser.add_argument("--output_vj",action="store_true",help="Use VJ information for prediction.") # to ignore_VJ
+
+parser.add_argument("--ignore_mhc",action="store_true", help="Ignore MHC information for prediction.") # to ignore_MHC
+parser.add_argument("--ignore_vj",action="store_true",help="Ignore VJ information for prediction.") # to ignore_VJ
 
 parser.add_argument("--only_beta",default=False , action="store_true",help="Only use beta chain for prediction.")
 parser.add_argument("--only_alpha",default=False , action="store_true",help="Only use alpha chain for prediction.")
@@ -72,16 +75,20 @@ parser.add_argument("--lr_s",default=False,action="store_true", help="Use a lear
 
 #  new defaults for SWA 
 parser.add_argument("--manual_SWA",action="store_true",default=False, help="Use Stochastic weight averaging (recommended)")
-parser.add_argument("--SWA_max_lr",type=float,default=0.0005,help="The maximum learning rate to use for the SWA optimizer.")
-parser.add_argument("--SWA_epochs",type=int,default=10,help="The number of epochs to train for with the SWA optimizer after initial training.")
-parser.add_argument("--SWA_cycle",type=int,default=50, help="The cycle length for SWA (when the model params are saved to be used in the average)")
-parser.add_argument("--SWA_on_epoch",action="store_true",default=False,help="Use SWA on epoch instead of iteration.")
-parser.add_argument("--SWA_const",action="store_true",default=False,help="Use constant SWA instead of cyclic SWA (recommended).")
+parser.add_argument("--SWA_max_lr",type=float,default=0.001,help="The maximum learning rate to use for the SWA optimizer.")
+parser.add_argument("--SWA_epochs",type=int,default=20,help="The number of epochs to train for with the SWA optimizer after initial training.")
+parser.add_argument("--SWA_cycle",type=int,default=1, help="The cycle length for SWA (when the model params are saved to be used in the average)")
+
+# parser.add_argument("--SWA_on_epoch",action="store_true",default=False,help="Use SWA on epoch instead of iteration.") # to on iteration
+# parser.add_argument("--SWA_const",action="store_true",default=False,help="Use constant SWA instead of cyclic SWA (recommended).") # to cyclic
+parser.add_argument("--SWA_on_iteration",action="store_true",default=False,help="Use SWA on epoch instead of iteration.") # to on iteration
+parser.add_argument("--SWA_cyclic",action="store_true",default=False,help="Use constant SWA instead of cyclic SWA (recommended).") # to cyclic
 
 parser.add_argument("--add_01",action="store_true",default=False,help="assume 01 allele if only V or J gene is specified and try creating the Long TCR sequence given 01 allele")
 
 parser.add_argument("--only_CDR3",action="store_true",default=False,help="Only use CDR3 sequence for prediction, affects the trainloader, this can be manually made by swithcing the Long columns to have the CDR3 sequences instead of the full TCR sequences")
-parser.add_argument("--load_MHC_dicts",action="store_true",default=False,help="Load MHC dictionaries from file 'data/MHC_all_dict.bin' or files 'data/MHC_lvl2nd_dict.bin' and 'data/MHC_lvl3rd_dict.bin' for hierarcical MHC instead of the hard coded values.")
+# parser.add_argument("--load_MHC_dicts",action="store_true",default=False,help="Load MHC dictionaries from file 'data/MHC_all_dict.bin' or files 'data/MHC_lvl2nd_dict.bin' and 'data/MHC_lvl3rd_dict.bin' for hierarcical MHC instead of the hard coded values.")
+parser.add_argument("--use_hardcoded_MHC_dicts",action="store_true",default=False,help="Use hardcoded values instead  of loading MHC dictionaries from file 'data/MHC_all_dict.bin' or files 'data/MHC_lvl2nd_dict.bin' and 'data/MHC_lvl3rd_dict.bin' for hierarcical MHC.")
 
 hparams = parser.parse_args()
 model =LitEPICTRACE(vars(hparams),EPICTRACE)
@@ -151,8 +158,8 @@ if hparams.manual_SWA:
 	if not os.path.exists(checkpoint_dir):
 		checkpoint_dir = os.getcwd() +'/loggingDir22/folder22/versions'+ str(hparams.version)[:3]+'_' + str(hparams.version)[-2] +  '/version_'+ str(hparams.version) +'/checkpoints/'
 		assert os.path.exists(checkpoint_dir)
-	if hparams.SWA_const:
-		path = SWA.do_SWA_const_lr(model,hparams.SWA_max_lr,hparams.SWA_cycle,hparams.SWA_on_epoch,hparams.SWA_epochs)#,tlogger=trainer.logger)
+	if not hparams.SWA_cyclic:
+		path = SWA.do_SWA_const_lr(model,hparams.SWA_max_lr,hparams.SWA_cycle,not hparams.SWA_on_iteration,hparams.SWA_epochs)#,tlogger=trainer.logger)
 	else:
 		path = SWA.do_SWA(model,hparams.SWA_max_lr,0.00001,hparams.SWA_cycle,hparams.SWA_epochs,save_dir=checkpoint_dir)
 	if path:

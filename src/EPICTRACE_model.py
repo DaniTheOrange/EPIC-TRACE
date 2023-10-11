@@ -439,9 +439,11 @@ class EPICTRACE(nn.Module):
         self.dropout = params['dropout'] if 'dropout' in params else 0.0
         self.dropout_attn = params['dropout_attn'] if 'dropout_attn' in params else 0.0
         self.dropout2 = params['dropout2'] if 'dropout2' in params else 0.0
-        self.output_vj = params['output_vj']
-        self.output_mhc = params['output_mhc']
-         
+        # self.output_vj = params['output_vj']
+        self.output_vj = not params["ignore_vj"]
+        # self.output_mhc = params['output_mhc']
+        self.output_mhc = not params["ignore_mhc"]
+
         self.only_beta = params["only_beta"]
         self.only_alpha = params["only_alpha"] if "only_alpha" in params else False
         self.mhc_hi = params["mhc_hi"]
@@ -660,7 +662,7 @@ class LitEPICTRACE(pl.LightningModule):
    
     def __init__(self,hparams,model_class=EPICTRACE):
         super().__init__()
-        self.load_MHC_dicts = hparams.get("load_MHC_dicts",False)
+        self.load_MHC_dicts = hparams.get("use_hardcoded_MHC_dicts",False)
         self.mhc_dict_path = hparams.get("MHC_dict","data/MHC_all_dict.bin")
         if self.load_MHC_dicts:
             with open("data/MHC_lvl2nd_dict.bin","rb") as handle:
