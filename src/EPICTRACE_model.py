@@ -661,7 +661,7 @@ class LitEPICTRACE(pl.LightningModule):
    
     def __init__(self,hparams,model_class=EPICTRACE):
         super().__init__()
-        self.load_MHC_dicts = hparams.get("use_hardcoded_MHC_dicts",False)
+        self.load_MHC_dicts = not hparams.get("use_hardcoded_MHC_dicts",False)
         self.mhc_dict_path = hparams.get("MHC_dict","data/MHC_all_dict.bin")
         if self.load_MHC_dicts:
             with open("data/MHC_lvl2nd_dict.bin","rb") as handle:

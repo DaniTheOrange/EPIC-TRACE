@@ -18,7 +18,7 @@ parser.add_argument("--train",type=str,help="path to train data")
 parser.add_argument("--val",type=str,help="path to val data")
 parser.add_argument("--test",type=str,help="path to test data") 
 # parser.add_argument("--TPP",type=int,default=3,help="The TPP level to train for. 2 for TPP2 and 3 for TPP3. Sets all arguments to corresponding default arguments") # TODO
-parser.add_argument("--MHC_dict",type=str,help="path to MHC dictionary if not default dictionaries are used") 
+parser.add_argument("--MHC_dict",type=str,default="data/MHC_all_dict.bin",help="path to MHC dictionary if not default dictionaries are used") 
 
 parser.add_argument("--lr",type=float,default=0.001,help="Learning rate to be used.")
 parser.add_argument("--batch_size",type=int,default=128)
