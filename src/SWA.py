@@ -15,7 +15,15 @@ def do_SWA(pl_model:LitEPICTRACE,lr_max,lr_min,cycle_len,epochs=10,ret_path_name
             dir_path = os.getcwd() +'/loggingDir22/folder22/versions'+ str(pl_model.hparams["hparams"]['version'])[:3]+'_' + str(pl_model.hparams["hparams"]['version'])[-2] +  '/version_'+ str(pl_model.hparams["hparams"]['version']) +'/checkpoints/'
     assert os.path.exists(dir_path)
 
+    # if GPU available use it
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+    else:
+        device = torch.device("cpu")
+    print("device ",device)
     model = pl_model.EPICTRACE_model
+    #set model to devise
+    model.to(device)
     model.train()
     swa_model = torch.optim.swa_utils.AveragedModel(model)
     optimizer = torch.optim.AdamW(model.parameters(),lr=lr_max)
@@ -25,7 +33,22 @@ def do_SWA(pl_model:LitEPICTRACE,lr_max,lr_min,cycle_len,epochs=10,ret_path_name
     for epoch in range(epochs):
         for TCR,Vs,Js,TCR_len ,alpha, aVs,aJs,alpha_len,MHC_As,MHC_class, epitope,epi_len,label,weight in dataset:
             optimizer.zero_grad()
-            pred = model(TCR,epitope,alpha,Vs,Js,TCR_len,aVs,aJs,alpha_len,MHC_As,MHC_class,epi_len)
+            # set inputs to device
+            TCR = TCR.to(device)
+            Vs = Vs.to(device)
+            Js = Js.to(device)
+            TCR_len = TCR_len.to(device)
+            alpha = alpha.to(device)
+            aVs = aVs.to(device)
+            aJs = aJs.to(device)
+            alpha_len = alpha_len.to(device)
+            MHC_As = MHC_As.to(device)
+            # MHC_class = MHC_class.to(device)
+            epitope = epitope.to(device)
+            # epi_len = epi_len.to(device)
+            label = label.to(device)
+            weight = weight.to(device)
+            pred = model(TCR,epitope,alpha,Vs,Js,TCR_len,aVs,aJs,alpha_len,MHC_As)
             
             
             loss = F.binary_cross_entropy(pred.view(-1),label.to(torch.float),weight= pl_model.weight_fun(label,weight))
@@ -80,7 +103,15 @@ def do_SWA_const_lr(pl_model:LitEPICTRACE,lr,weight_save_freq=1,on_epoch=True,ep
             dir_path = os.getcwd() +'/loggingDir22/folder22/versions'+ str(pl_model.hparams["hparams"]['version'])[:3]+'_' + str(pl_model.hparams["hparams"]['version'])[-2] +  '/version_'+ str(pl_model.hparams["hparams"]['version']) +'/checkpoints/'
     assert os.path.exists(dir_path)
 
+    # if GPU available use it
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+    else:
+        device = torch.device("cpu")
+    print("device ",device)
     model = pl_model.EPICTRACE_model
+    #set model to devise
+    model.to(device)
     model.train()
     swa_model = torch.optim.swa_utils.AveragedModel(model)
     optimizer = torch.optim.AdamW(model.parameters(),lr=lr)
@@ -91,7 +122,22 @@ def do_SWA_const_lr(pl_model:LitEPICTRACE,lr,weight_save_freq=1,on_epoch=True,ep
     for epoch in range(epochs):
         for TCR,Vs,Js,TCR_len ,alpha, aVs,aJs,alpha_len,MHC_As,MHC_class, epitope,epi_len,label,weight in dataset:
             optimizer.zero_grad()
-            pred = model(TCR,epitope,alpha,Vs,Js,TCR_len,aVs,aJs,alpha_len,MHC_As,MHC_class,epi_len)
+            # set inputs to device
+            TCR = TCR.to(device)
+            Vs = Vs.to(device)
+            Js = Js.to(device)
+            TCR_len = TCR_len.to(device)
+            alpha = alpha.to(device)
+            aVs = aVs.to(device)
+            aJs = aJs.to(device)
+            alpha_len = alpha_len.to(device)
+            MHC_As = MHC_As.to(device)
+            # MHC_class = MHC_class.to(device)
+            epitope = epitope.to(device)
+            # epi_len = epi_len.to(device)
+            label = label.to(device)
+            weight = weight.to(device)
+            pred = model(TCR,epitope,alpha,Vs,Js,TCR_len,aVs,aJs,alpha_len,MHC_As)
             
             
             loss = F.binary_cross_entropy(pred.view(-1),label.to(torch.float),weight= pl_model.weight_fun(label,weight))

@@ -189,9 +189,9 @@ class PPIDataset2(Dataset):
         one_hot_padded_epitopes = torch.nn.functional.one_hot(padded_epitopes,21).permute(0,2,1).to(torch.float)
         ret = [one_hot_padded_CDR3s,None,None,None ,one_hot_padded_alphas,None,None ,None ,None,None, one_hot_padded_epitopes,None,None,None]
         
-        cdr3_lens = [len(e) if pd.notna(e) else 0 for e in CDR3s_in]
-        alpha_lens = [len(e) if pd.notna(e) else 0 for e in alphas_in]
-        epi_lens = [len(e) for e in epitopes]
+        cdr3_lens = torch.tensor([len(e) if pd.notna(e) else 0 for e in CDR3s_in])
+        alpha_lens = torch.tensor([len(e) if pd.notna(e) else 0 for e in alphas_in])
+        epi_lens = torch.tensor([len(e) for e in epitopes])
         ret[3] = cdr3_lens
         ret[7] = alpha_lens
         ret[11] = epi_lens
@@ -247,9 +247,9 @@ class PPIDataset2(Dataset):
         ret = [padded_longs,None,None,None ,padded_alongs,None,None ,None ,None,None, padded_epitopes,None,None,None]
 
         
-        cdr3_lens = [len(e) if pd.notna(e) else 0 for e in CDR3s_in]
-        alpha_lens = [len(e) if pd.notna(e) else 0 for e in alphas_in]
-        epi_lens = [len(e) for e in epitopes]
+        cdr3_lens = torch.tensor([len(e) if pd.notna(e) else 0 for e in CDR3s_in])
+        alpha_lens = torch.tensor([len(e) if pd.notna(e) else 0 for e in alphas_in])
+        epi_lens = torch.tensor([len(e) for e in epitopes])
         ret[3]=cdr3_lens
         ret[7] = alpha_lens
         ret[11] = epi_lens
@@ -318,9 +318,9 @@ class PPIDataset2(Dataset):
         
         ret = [torch.cat([padded_longs,one_hot_padded_CDR3s],dim=1),None,None,None ,torch.cat([padded_alongs,one_hot_padded_alphas],dim=1),None,None ,None ,None,None, torch.cat([padded_epitopes,one_hot_padded_epitopes],dim=1),None,None,None]
         
-        cdr3_lens = [len(e) if pd.notna(e) else 0 for e in CDR3s_in]
-        alpha_lens = [len(e) if pd.notna(e) else 0 for e in alphas_in]
-        epi_lens = [len(e) for e in epitopes]
+        cdr3_lens = torch.tensor([len(e) if pd.notna(e) else 0 for e in CDR3s_in])
+        alpha_lens = torch.tensor([len(e) if pd.notna(e) else 0 for e in alphas_in])
+        epi_lens = torch.tensor([len(e) for e in epitopes])
         ret[3]=cdr3_lens
         ret[7] = alpha_lens
         ret[11] = epi_lens
@@ -546,10 +546,9 @@ class EPICTRACE(nn.Module):
         
         
     def forward(self,TCR_in,Epitope_in,Alpha_in=None,V=None,J=None,TCR_len_in=None,aV=None,aJ=None,alpha_len_in=None,MHC_A=None,MHC_class=None,epi_len=None):
-        TCR_len = torch.tensor(TCR_len_in)
-        alpha_len = torch.tensor(alpha_len_in)
-        # betas,  = TCR_len.nonzero(as_tuple=True)
-        # alphas,  = alpha_len.nonzero(as_tuple=True)
+        TCR_len = TCR_len_in
+        alpha_len = alpha_len_in
+        
         betas = TCR_len > 0
         alphas  = alpha_len >0
         Epitope = torch.cat([conv(Epitope_in) for conv in self.epitope_conv],dim=1)
