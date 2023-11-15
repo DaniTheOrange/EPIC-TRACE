@@ -27,16 +27,18 @@ OR\
 --val <valdata_file>.csv or <valdata_file>.gz\
 --test <testdata_file>.csv or <testdata_file>.gz\
 
-    python src/train.py XXX --max_epochs=80 -g=1 -v=123456 -l 21 --collate one_hot --test_task 2 --train  <traindata_file>.gz --val <valdata_file>.gz --test <testdata_file>.gz
+    python src/train.py --max_epochs=80 -g=1 -v=123456 -l 21 --collate one_hot --test_task 2 --train  <traindata_file>.gz --val <valdata_file>.gz --test <testdata_file>.gz
 
 ### Pretrained models and embedding dicts and data
 https://www.dropbox.com/sh/jffr1q5wi9wgxl7/AABC_f6erKxZzjA-MlQuoCpga?dl=0
 
-### Predict
+### Predict 
 
     python src/test_results.py <5 first digits of versioncode> --runs <last digit or list of last digits> --save_preds --SWA --SWA_run _c0.001_1_20_01 --dataset <path to data> --pred_save_path <predictionssavepath.csv>
 
+with pretrained one hot encoding model (requires downloading the pretrained model from dropbox)):
 
+    python src/test_results.py 91002 --runs 1 --save_preds --SWA --SWA_run _c0.0001_1_20_01 --dataset <path to data> --pred_save_path <predictionssavepath.csv>
 
 further examples are in scripts/runEPICTrace.sh
 

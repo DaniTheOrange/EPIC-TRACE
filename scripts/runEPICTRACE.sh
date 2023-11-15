@@ -24,7 +24,7 @@ python src/train.py CNN2 --max_epochs=0 --load -v ${versioncode}$(($n % 5))${tas
 
 
 # SWA run identifier _c<lr>__<SWA_cycle>_<SWA_epochs>_<idx>
-SWA_r=_c0.001_1_20_01 
+SWA_r=_c0.0001_1_20_01 
 
 # predicting on  specified test set for a single split
 python src/test_results.py ${versioncode}${n}${task} --runs ${split} --save_preds --SWA --SWA_run ${SWA_r} --dataset data/IEVDJcor310fPEpivalR_17_6$(($n % 5))tpp${task}_CV/ab_b${split}_tpp${task}_data.gz
