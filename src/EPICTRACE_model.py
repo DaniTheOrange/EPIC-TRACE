@@ -736,10 +736,10 @@ class LitEPICTRACE(pl.LightningModule):
         return self(batch)
 
     def training_step(self,batch,batch_idx):
-        # pred ,label,weight = self.step(batch)
-        # loss = F.binary_cross_entropy(pred.view(-1),label.to(torch.float),weight= self.weight_fun(label,weight))
-        # self.log('train_loss', loss)
-        loss = torch.tensor(0.0,requires_grad=True)
+        pred ,label,weight = self.step(batch)
+        loss = F.binary_cross_entropy(pred.view(-1),label.to(torch.float),weight= self.weight_fun(label,weight))
+        self.log('train_loss', loss)
+        #loss = torch.tensor(0.0,requires_grad=True)
         return loss
 
     def validation_step(self,batch,batch_idx,dataloader_idx=None):
@@ -895,10 +895,12 @@ class LitEPICTRACE(pl.LightningModule):
         
         return test_dataloader
 
-    def test_dataloader(self):
+    def test_dataloader(self,path=None,emb_dict=None):
+        path = path if path else self.test_datapath
+        emb_dict = emb_dict if emb_dict else self.ed
         
 
-        tcr_test_data = PPIDataset2(csv_file = self.test_datapath,embedding_dict=self.ed,
+        tcr_test_data = PPIDataset2(csv_file = path,embedding_dict=emb_dict,
             output_vj=self.EPICTRACE_model.output_vj,output_mhc_A=self.EPICTRACE_model.output_mhc, mhc_hi=self.EPICTRACE_model.mhc_hi,add_01=self.add_01,only_CDR3=self.only_CDR3,load_MHC_dicts = self.load_MHC_dicts, mhc_dict_path=self.mhc_dict_path)
         tcr_test_data.TCR_max_length = self.EPICTRACE_model.TCR_max_length
         tcr_test_data.epitope_max_length = self.EPICTRACE_model.epitope_max_length
