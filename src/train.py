@@ -11,7 +11,7 @@ from EPICTRACE_model import LitEPICTRACE, EPICTRACE
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("model",type=str,help="Dummy argument to be compatible with saved models")
+#parser.add_argument("model",type=str,help="Dummy argument to be compatible with saved models")
 parser.add_argument("-d","--dataset", type=str, default='IEVDJcor310fPEpivalR_17_60tpp3_CV/ab_b0',help="Name of dataset to train and validate the model with. Located in the 'data/' folder. Train and validation files ends with '_train_data' and '_validate_data' + extension= '.gz' / '.csv'")
 
 parser.add_argument("--train",type=str,help="path to train data")

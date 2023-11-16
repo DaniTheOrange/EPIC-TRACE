@@ -88,25 +88,28 @@ def manual_testrun(model:torch.nn.Module,dataloader,ret_preds_labels=False):
 def save_preds(pl_model,model_path,datapath=None,data_embedding_dict=None,savepath=None):
     """saves model predictions to model_path/"""
     
-    try:
-        dataloader = pl_model.test_dataloader()
-    except:
-        dataloader = pl_model.val_dataloader()
+    if datapath is None:
+        test_dataloader = pl_model.test_dataloader()
+    else:
+        if data_embedding_dict is not None:
+            with open(data_embedding_dict, 'rb') as handle:
+                data_embedding_dict = pickle.load(handle)
+        test_dataloader = pl_model.test_dataloader(datapath,data_embedding_dict)
         assert datapath is not None, "datapath must be given if no default test data is given"
 
-    if type(dataloader) == type([]):
-        dataloader = dataloader[0]
-    if datapath is not None:
-        datase = dataloader.dataset
-        datadf =pd.read_csv(datapath)
-        datase.data = datadf
-        if data_embedding_dict is not None:
-            with open(params.data_embedding_dict, 'rb') as handle:
-                datase.embedding_dict = pickle.load(handle)
-        test_dataloader = DataLoader(datase, batch_size=pl_model.batch_size,
-                        collate_fn=datase.give_collate(pl_model.collate)  ,num_workers=len(os.sched_getaffinity(0)),pin_memory=True)
-    else:
-        test_dataloader=dataloader
+#    if type(dataloader) == type([]):
+#        dataloader = dataloader[0]
+#    if datapath is not None:
+#        datase = dataloader.dataset
+#        datadf =pd.read_csv(datapath)
+#        datase.data = datadf
+#        if data_embedding_dict is not None:
+#            with open(params.data_embedding_dict, 'rb') as handle:
+#                datase.embedding_dict = pickle.load(handle)
+#        test_dataloader = DataLoader(datase, batch_size=pl_model.batch_size,
+#                        collate_fn=datase.give_collate(pl_model.collate)  ,num_workers=len(os.sched_getaffinity(0)),pin_memory=True)
+#    else:
+#        test_dataloader=dataloader
     
     roc_auc,ap,pred_all,labels_all =manual_testrun(pl_model.EPICTRACE_model,test_dataloader,True)
     test_data_name = datapath.replace("/","_") if datapath is not None else ""
