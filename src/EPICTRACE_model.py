@@ -198,9 +198,9 @@ class PPIDataset2(Dataset):
         
 
         if self.output_vj:
-            ret[1] = torch.tensor([self.v_dict[v] if pd.notna(v) else 0 for v in Vs],dtype=torch.int64).view(-1,1)
+            ret[1] = torch.tensor([self.v_dict[v] if v in self.v_dict else 0 for v in Vs],dtype=torch.int64).view(-1,1)
             ret[2] = torch.tensor([self.j_dict[j] if pd.notna(j) else 0 for j in Js],dtype=torch.int64).view(-1,1)
-            ret[5] = torch.tensor([self.av_dict[v] if pd.notna(v) else 0 for v in aVs],dtype=torch.int64).view(-1,1)
+            ret[5] = torch.tensor([self.av_dict[v] if v in self.av_dict else 0 for v in aVs],dtype=torch.int64).view(-1,1)
             ret[6] = torch.tensor([self.aj_dict[j] if pd.notna(j) else 0 for j in aJs],dtype=torch.int64).view(-1,1)
         
 
@@ -256,9 +256,9 @@ class PPIDataset2(Dataset):
         
 
         if self.output_vj:
-            ret[1] = torch.tensor([self.v_dict[v] if pd.notna(v) else 0 for v in Vs],dtype=torch.int64).view(-1,1)
+            ret[1] = torch.tensor([self.v_dict[v] if v in self.v_dict else 0 for v in Vs],dtype=torch.int64).view(-1,1)
             ret[2] = torch.tensor([self.j_dict[j] if pd.notna(j) else 0 for j in Js],dtype=torch.int64).view(-1,1)
-            ret[5] = torch.tensor([self.av_dict[v] if pd.notna(v) else 0 for v in aVs],dtype=torch.int64).view(-1,1)
+            ret[5] = torch.tensor([self.av_dict[v] if v in self.av_dict else 0 for v in aVs],dtype=torch.int64).view(-1,1)
             ret[6] = torch.tensor([self.aj_dict[j] if pd.notna(j) else 0 for j in aJs],dtype=torch.int64).view(-1,1)
         
 
