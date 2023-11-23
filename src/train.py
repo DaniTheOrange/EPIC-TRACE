@@ -89,7 +89,9 @@ parser.add_argument("--add_01",action="store_true",default=False,help="assume 01
 parser.add_argument("--only_CDR3",action="store_true",default=False,help="Only use CDR3 sequence for prediction, affects the trainloader, this can be manually made by swithcing the Long columns to have the CDR3 sequences instead of the full TCR sequences")
 # parser.add_argument("--load_MHC_dicts",action="store_true",default=False,help="Load MHC dictionaries from file 'data/MHC_all_dict.bin' or files 'data/MHC_lvl2nd_dict.bin' and 'data/MHC_lvl3rd_dict.bin' for hierarcical MHC instead of the hard coded values.")
 parser.add_argument("--use_hardcoded_MHC_dicts",action="store_true",default=False,help="Use hardcoded values instead  of loading MHC dictionaries from file 'data/MHC_all_dict.bin' or files 'data/MHC_lvl2nd_dict.bin' and 'data/MHC_lvl3rd_dict.bin' for hierarcical MHC.")
-
+parser.add_argument("--save_path",type=str,help="The path to save the model.")
+parser.add_argument("--logging_path",type=str,default="loggingDir22",help="The path to the logging directory.")
+parser.add_argument("--load_path",type=str,help="The path to the model to be loaded.")
 hparams = parser.parse_args()
 model =LitEPICTRACE(vars(hparams),EPICTRACE)
 
@@ -98,7 +100,7 @@ print("version: ",hparams.version)
 print(model)
 
 
-checkpoint_callback = ModelCheckpoint( monitor='valid_ap' ,mode='max') # ,save_last=True save space
+checkpoint_callback = ModelCheckpoint( dirpath=hparams.save_path, monitor='valid_ap' ,mode='max') # ,save_last=True save space
 if hparams.es_epoch_3:
 	early_stopping = EarlyStopping('valid_ap',mode='max',patience =3,check_on_train_epoch_end=True)
 else:
@@ -108,27 +110,30 @@ swa = StochasticWeightAveraging(swa_lrs=0.0003,swa_epoch_start=45)
 
 lr_monitor = LearningRateMonitor(logging_interval='step')
 
-logger=pl.loggers.TensorBoardLogger("loggingDir22",name="folder22",version=hparams.version)
+logger=pl.loggers.TensorBoardLogger(hparams.logging_path,name="folder22",version=hparams.version)
 trainer = pl.Trainer(gpus=hparams.gpus,logger=logger,max_epochs=hparams.max_epochs,callbacks=[early_stopping,checkpoint_callback,lr_monitor],progress_bar_refresh_rate=0,auto_lr_find=hparams.lr_find) # early_stopping removed
 
 
 if hparams.load:
-	checkpoint_dir = os.getcwd() +'/loggingDir22/folder22/version_'+ str(hparams.version) +'/checkpoints/'
-	if not os.path.exists(checkpoint_dir):
-		checkpoint_dir = os.getcwd() +'/loggingDir22/folder22/versions'+ str(hparams.version)[:3]+'_' + str(hparams.version)[-2] +  '/version_'+ str(hparams.version) +'/checkpoints/'
-		assert os.path.exists(checkpoint_dir)
-	idx=0
-	e=0
-	for i,strr in enumerate(os.listdir(checkpoint_dir)):
-		start = strr.find("epoch=")
-		
+	if hparams.load_path is not None:
+		path=hparams.load_path
+	else:
+		checkpoint_dir = os.getcwd() +'/loggingDir22/folder22/version_'+ str(hparams.version) +'/checkpoints/'
+		if not os.path.exists(checkpoint_dir):
+			checkpoint_dir = os.getcwd() +'/loggingDir22/folder22/versions'+ str(hparams.version)[:3]+'_' + str(hparams.version)[-2] +  '/version_'+ str(hparams.version) +'/checkpoints/'
+			assert os.path.exists(checkpoint_dir)
+		idx=0
+		e=0
+		for i,strr in enumerate(os.listdir(checkpoint_dir)):
+			start = strr.find("epoch=")
+			
 
-		if start != -1:
-			ee=int(strr[start+6:strr.find("-")])
-			if ee>=e:
-				e=ee
-				idx=i
-	path = checkpoint_dir+ os.listdir(checkpoint_dir)[idx]
+			if start != -1:
+				ee=int(strr[start+6:strr.find("-")])
+				if ee>=e:
+					e=ee
+					idx=i
+		path = checkpoint_dir+ os.listdir(checkpoint_dir)[idx]
 	print(path)
 	model = LitEPICTRACE.load_from_checkpoint(path)
 	
@@ -154,12 +159,12 @@ if hparams.test_task != -1:
 			pickle.dump(ret,handle)
 
 if hparams.manual_SWA:
-	checkpoint_dir = os.getcwd() +'/loggingDir22/folder22/version_'+ str(hparams.version) +'/checkpoints/'
+	checkpoint_dir = os.getcwd() +'/loggingDir22/folder22/version_'+ str(hparams.version) +'/checkpoints/' if hparams.save_path is None else hparams.save_path
 	if not os.path.exists(checkpoint_dir):
 		checkpoint_dir = os.getcwd() +'/loggingDir22/folder22/versions'+ str(hparams.version)[:3]+'_' + str(hparams.version)[-2] +  '/version_'+ str(hparams.version) +'/checkpoints/'
 		assert os.path.exists(checkpoint_dir)
 	if not hparams.SWA_cyclic:
-		path = SWA.do_SWA_const_lr(model,hparams.SWA_max_lr,hparams.SWA_cycle,not hparams.SWA_on_iteration,hparams.SWA_epochs)#,tlogger=trainer.logger)
+		path = SWA.do_SWA_const_lr(model,hparams.SWA_max_lr,hparams.SWA_cycle,not hparams.SWA_on_iteration,hparams.SWA_epochs,save_dir=checkpoint_dir)#,tlogger=trainer.logger)
 	else:
 		path = SWA.do_SWA(model,hparams.SWA_max_lr,0.00001,hparams.SWA_cycle,hparams.SWA_epochs,save_dir=checkpoint_dir)
 	if path:
