@@ -22,25 +22,27 @@ from sklearn.metrics import roc_auc_score,average_precision_score
 
 
 def get_path(params,run,idx):
-
-    checkpoint_dir = os.getcwd() + params.folder + params.version[idx] +str(run) +'/checkpoints/'
-            
-    if not params.SWA:
-        index=0
-        e=0
-        for i,strr in enumerate(os.listdir(checkpoint_dir)):
-            start = strr.find("epoch=")
-            
-
-            if start != -1:
-                ee=int(strr[start+6:strr.find("-")])
-                if ee>=e:
-                    e=ee
-                    index=i
-        path = checkpoint_dir+ os.listdir(checkpoint_dir)[index]
+    if params.model_path is not None:
+        return params.model_path
     else:
-        path = checkpoint_dir +params.version[idx] +str(run)+"_manual_swa"+params.SWA_run +  ".ckpt"
-    return path
+        checkpoint_dir = os.getcwd() + params.folder + params.version[idx] +str(run) +'/checkpoints/'
+                
+        if not params.SWA:
+            index=0
+            e=0
+            for i,strr in enumerate(os.listdir(checkpoint_dir)):
+                start = strr.find("epoch=")
+                
+
+                if start != -1:
+                    ee=int(strr[start+6:strr.find("-")])
+                    if ee>=e:
+                        e=ee
+                        index=i
+            path = checkpoint_dir+ os.listdir(checkpoint_dir)[index]
+        else:
+            path = checkpoint_dir +params.version[idx] +str(run)+"_manual_swa"+params.SWA_run +  ".ckpt"
+        return path
 
 
 
@@ -261,7 +263,7 @@ if __name__ =='__main__':
     parser.add_argument("--gepi15",action="store_true")
     parser.add_argument("--save_version",type=str,help="Version name added to the save file")
     parser.add_argument("--pred_save_path",type=str,help="path to save the predictions")
-
+    parser.add_argument("--model_path",type=str,help="path exact path to model weights .ckpt file")
     params = parser.parse_args()
 
     assert (params.SWA and params.SWA_run) or ( not params.SWA)
