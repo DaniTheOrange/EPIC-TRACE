@@ -694,14 +694,13 @@ class LitEPICTRACE(pl.LightningModule):
         self.val_datapath = hparams["val"] if (hparams["val"] is not None) else os.getcwd() + '/data/'+self.dataset+'_validate_data'
         self.test_datapath = hparams["test"] if (hparams["test"] is not None) else (os.getcwd() + '/data/'+self.dataset+'_tpp'+ str(self.test_task) +'_data' if (self.test_task > -1) else os.getcwd() + '/data/'+self.dataset+'_test_data')
         
+        self.ed = None
         if self.input_embedding:
             # print("debugging not actually loading embedding")
             self.input_embedding_data = hparams['input_embedding_data']
-            self.ed = None
-            with open(os.getcwd() +'/data/' +self.input_embedding_data , 'rb') as handle:
-                self.ed = pickle.load(handle)
-        else:
-            self.ed = None
+            
+            
+        
 
 
         # weight assumed to be (label*(4.0) + 1)/epitope_freq but can be choosen freely using hp "linear"
@@ -720,6 +719,15 @@ class LitEPICTRACE(pl.LightningModule):
         self.weight_fun=_weight_fun
 
         self.save_hyperparameters()
+
+    def load_embedding_dict(self):
+        if self.ed is None:
+            if self.input_embedding:
+                # print("debugging not actually loading embedding")
+                
+                with open(os.getcwd() +'/data/' +self.input_embedding_data , 'rb') as handle:
+                    self.ed = pickle.load(handle)
+        return self.ed
     
     def forward(self,TCR,Vs,Js,TCR_len ,alpha, aVs,aJs,alpha_len,MHC_As,MHC_class, epitope,epi_len,label=None,weight=None):
         pred = self.EPICTRACE_model(TCR,epitope,alpha,Vs,Js,TCR_len,aVs,aJs,alpha_len,MHC_As,MHC_class,epi_len)
@@ -867,7 +875,7 @@ class LitEPICTRACE(pl.LightningModule):
     def train_dataloader(self):
         
         
-        tcr_train_data = PPIDataset2(csv_file = self.train_datapath,embedding_dict=self.ed,
+        tcr_train_data = PPIDataset2(csv_file = self.train_datapath,embedding_dict=self.load_embedding_dict(),
             output_vj=self.EPICTRACE_model.output_vj,output_mhc_A=self.EPICTRACE_model.output_mhc, mhc_hi=self.EPICTRACE_model.mhc_hi,add_01=self.add_01,only_CDR3=self.only_CDR3,load_MHC_dicts = self.load_MHC_dicts, mhc_dict_path=self.mhc_dict_path )
         
         tcr_train_data.TCR_max_length = self.EPICTRACE_model.TCR_max_length
@@ -883,7 +891,7 @@ class LitEPICTRACE(pl.LightningModule):
         
         
         
-        tcr_test_data = PPIDataset2(csv_file = self.val_datapath,embedding_dict=self.ed,
+        tcr_test_data = PPIDataset2(csv_file = self.val_datapath,embedding_dict=self.load_embedding_dict(),
             output_vj=self.EPICTRACE_model.output_vj,output_mhc_A=self.EPICTRACE_model.output_mhc, mhc_hi=self.EPICTRACE_model.mhc_hi,add_01=self.add_01,only_CDR3=self.only_CDR3,load_MHC_dicts = self.load_MHC_dicts, mhc_dict_path=self.mhc_dict_path)
         tcr_test_data.TCR_max_length = self.EPICTRACE_model.TCR_max_length
         tcr_test_data.epitope_max_length = self.EPICTRACE_model.epitope_max_length
@@ -897,7 +905,7 @@ class LitEPICTRACE(pl.LightningModule):
 
     def test_dataloader(self,path=None,emb_dict=None):
         path = path if path else self.test_datapath
-        emb_dict = emb_dict if emb_dict else self.ed
+        emb_dict = emb_dict if emb_dict else self.load_embedding_dict()
         
 
         tcr_test_data = PPIDataset2(csv_file = path,embedding_dict=emb_dict,
