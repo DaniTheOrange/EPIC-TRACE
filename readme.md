@@ -1,5 +1,5 @@
 # EPIC-TRACE: predicting TCR binding to unseen epitopes using attention and contextualized embeddings
-https://doi.org/10.1101/2023.06.26.546489
+[https://doi.org/10.1101/2023.06.26.546489](https://doi.org/10.1093/bioinformatics/btad743)
 
 
 ![fig](TCRstruct.png)
