@@ -18,10 +18,11 @@ n=0 #the cross-validation index 0-4
 # for TPP2 --lr 0.0001 and --manual_SWA with --SWA_max_lr 0.0001
 #####
 #base training
-python src/train.py CNN2 --max_epochs=80 -v ${versioncode}$(($n % 5))${task}${split} -d IEVDJcor310fPEpivalR_17_6$(($n % 5))tpp${task}_CV/ab_b${split} -i=Long_ievdj_mcpas_alpha.bin --lr_s 
+python src/train.py --max_epochs=80 -v ${versioncode}$(($n % 5))${task}${split} -d IEVDJcor310fPEpivalR_17_6$(($n % 5))tpp${task}_CV/ab_b${split} -i=Long_ievdj_mcpas_alpha.bin --lr_s 
+# OR (creates protBERTembeddings automatically, in subsequent runs set -i to the path of the embeddings)
+# python src/train.py --max_epochs=80 -v <versioncode> --train <path_to_train> --val <path_to_val> --test <path_to_test> --lr_s --manual_SWA
 #SWA training (can be done jointly by adding --manual_SWA to base training)
-python src/train.py CNN2 --max_epochs=0 --load -v ${versioncode}$(($n % 5))${task}${split} -d IEVDJcor310fPEpivalR_17_6$(($n % 5))tpp${task}_CV/ab_b${split} --test_task ${task} -i=Long_ievdj_mcpas_alpha.bin --lr_s --manual_SWA
-
+python src/train.py --max_epochs=0 --load -v ${versioncode}$(($n % 5))${task}${split} -d IEVDJcor310fPEpivalR_17_6$(($n % 5))tpp${task}_CV/ab_b${split} --test_task ${task} -i=Long_ievdj_mcpas_alpha.bin --lr_s --manual_SWA
 
 # SWA run identifier _c<lr>__<SWA_cycle>_<SWA_epochs>_<idx>
 SWA_r=_c0.0001_1_20_01 

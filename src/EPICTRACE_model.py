@@ -9,6 +9,7 @@ from torch.nn.modules.activation import MultiheadAttention
 from torch.utils.data import Dataset, DataLoader
 import pandas as pd
 import pickle
+import subprocess
 import torchmetrics
 import os
 import copy
@@ -693,7 +694,8 @@ class LitEPICTRACE(pl.LightningModule):
         self.train_datapath = hparams["train"] if (hparams["train"] is not None) else os.getcwd() + '/data/'+self.dataset+'_train_data' 
         self.val_datapath = hparams["val"] if (hparams["val"] is not None) else os.getcwd() + '/data/'+self.dataset+'_validate_data'
         self.test_datapath = hparams["test"] if (hparams["test"] is not None) else (os.getcwd() + '/data/'+self.dataset+'_tpp'+ str(self.test_task) +'_data' if (self.test_task > -1) else os.getcwd() + '/data/'+self.dataset+'_test_data')
-        
+        self.version = hparams["version"]
+
         self.ed = None
         if self.input_embedding:
             # print("debugging not actually loading embedding")
@@ -721,12 +723,38 @@ class LitEPICTRACE(pl.LightningModule):
         self.save_hyperparameters()
 
     def load_embedding_dict(self):
+        # TODO: when embdict required and not available create, save and load
         if self.ed is None:
             if self.input_embedding:
                 # print("debugging not actually loading embedding")
                 
                 with open(os.getcwd() +'/data/' +self.input_embedding_data , 'rb') as handle:
                     self.ed = pickle.load(handle)
+            else:
+                if "embedding" in self.collate:
+                    # use os to run get_embs.py for the datasets
+                    # 1 create joint dataset train+val+test
+                        pd.concat([pd.read_csv(self.train_datapath),pd.read_csv(self.val_datapath),pd.read_csv(self.test_datapath)]).to_csv("data/joint_data.csv.gz",index=False)
+                    # 2 run get_embs.py
+                    # 2.1 change to correct directory
+                        os.chdir("protBERT")
+
+                    # Run get_embs.py using the Python interpreter from the desired virtual environment
+                        subprocess.run([
+                            "protbert_venv/bin/python",
+                            "get_embs.py",
+                            "../data/joint_data.csv.gz",
+                            str(self.version)
+                        ])
+                    
+                    # 3 load the embedding dict
+                        with open(f"{self.version}allT.bin","rb") as handle:
+                            self.ed = pickle.load(handle)
+                    #  4 Clean up
+                        os.system("rm ../data/joint_data.csv.gz")
+                        # os.system(f"rm {self.version}allT.bin")
+                        os.chdir("..")
+                        
         return self.ed
     
     def forward(self,TCR,Vs,Js,TCR_len ,alpha, aVs,aJs,alpha_len,MHC_As,MHC_class, epitope,epi_len,label=None,weight=None):

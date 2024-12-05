@@ -20,6 +20,8 @@ Train with default parameters (optimized for Unseen epitope task) \
 -g=1 for GPU\
 -v versioncode\
 specify \
+(**new**: nothing i.e. no -l 21 --collate one_hot nor -i <embeddings_file>.bin; the embedding file will be automatically created)
+OR
 -l 21 --collate one_hot (for one hot)\
 OR\
 -i <embeddings_file>.bin (to use embeddings)\
@@ -27,7 +29,7 @@ OR\
 --val <valdata_file>.csv or <valdata_file>.gz\
 --test <testdata_file>.csv or <testdata_file>.gz\
 
-    python src/train.py --max_epochs=80 -g=1 -v=123456 -l 21 --collate one_hot --test_task 2 --train  <traindata_file>.gz --val <valdata_file>.gz --test <testdata_file>.gz
+    python src/train.py --max_epochs=80 -g=1 -v=123456 --test_task 2 --train  <traindata_file>.gz --val <valdata_file>.gz --test <testdata_file>.gz
 
 ### Pretrained models and embedding dicts and data
 https://www.dropbox.com/sh/jffr1q5wi9wgxl7/AABC_f6erKxZzjA-MlQuoCpga?dl=0
