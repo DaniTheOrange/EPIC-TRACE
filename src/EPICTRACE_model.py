@@ -734,7 +734,7 @@ class LitEPICTRACE(pl.LightningModule):
                 if "embedding" in self.collate:
                     # use os to run get_embs.py for the datasets
                     # 1 create joint dataset train+val+test
-                        pd.concat([pd.read_csv(self.train_datapath),pd.read_csv(self.val_datapath),pd.read_csv(self.test_datapath)]).to_csv("data/joint_data.csv.gz",index=False)
+                        pd.concat([pd.read_csv(d) for d in [self.train_datapath,self.val_datapath,self.test_datapath] if os.path.exists(d)]).to_csv("data/joint_data.csv.gz",index=False)
                     # 2 run get_embs.py
                     # 2.1 change to correct directory
                         os.chdir("protBERT")
